@@ -306,7 +306,6 @@ class AlignDlib:
     def align(self, rgbImg, min_value=1.2, max_value=5, bb=None,
               landmarks=None, landmarkIndices=INNER_EYES_AND_BOTTOM_LIP,
               skipMulti=False, scale=0.3):
-        print '----------------'
         img_dim = 800
         if rgbImg is None:
             return 401, None, None, None

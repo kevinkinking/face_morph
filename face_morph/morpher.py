@@ -214,7 +214,7 @@ def face_aging_interface(img,
         version_flag=True,
         sex_flag='male'):
 
-    code, img_aligned, face_img_aligned , img_aligned_points = face_process.face_detector.align(img)
+    code, img_aligned, face_img_aligned , img_aligned_points = face_process.face_detector.align_stable(img)
     if code != 201:
         return code, None, None
 

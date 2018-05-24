@@ -36,4 +36,4 @@ def face_aging_web():
 
 if __name__ == "__main__":
     interface.global_init()
-    app.run(host='10.1.5.163', port=8081, threaded=False, processes=40)
+    app.run(host='172.16.36.221', port=8081, threaded=False, processes=40)

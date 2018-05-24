@@ -82,7 +82,7 @@ if __name__ == '__main__':
     global_init()
     ti =timer.Timer()
     ti.tic()
-    code, urls = face_aging_interface_url('data/baby/9.jpg', 'female')
+    code, urls = face_aging_interface_url('data/baby/7.jpg', 'female')
     ti.toc()
     print ti.total_time
     print code

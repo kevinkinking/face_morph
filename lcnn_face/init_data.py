@@ -135,8 +135,8 @@ if __name__ == '__main__':
     # generate_feature(config.prototxt, config.caffemodel, config.save_feManImg_path, config.save_female_txt, config.save_female_feature)
     
     #3
-    if not os.path.exists(config.save_AlignFemalePoint_dir):
-        os.makedirs(config.save_AlignFemalePoint_dir)
+    if not os.path.exists(config.save_AlignFemaleImg_dir):
+        os.makedirs(config.save_AlignFemaleImg_dir)
     if not os.path.exists(config.save_AlignMaleImg_dir):
         os.makedirs(config.save_AlignMaleImg_dir)
     if not os.path.exists(config.save_AlignFemalePoint_dir):

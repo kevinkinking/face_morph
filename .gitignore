@@ -1,6 +1,10 @@
 *.jpg
 *.jpeg
 *.png
+*.gif
 *.bin
 *.dat
 *.caffemodel
+.gitignore
+nohup.out
+*.log

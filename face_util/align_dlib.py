@@ -21,6 +21,7 @@ import cv2
 import dlib
 import numpy as np
 import config
+import math
 
 TEMPLATE = np.float32([
     (0.0792396913815, 0.339223741112), (0.0829219487236, 0.456955367943),
@@ -158,7 +159,7 @@ class AlignDlib:
         eyes_centerX = eyes_distance/2 + left_eyeX
         
         distance = abs(points[30][0] - eyes_centerX) 
-         
+
         return distance
 
     def modify_landmarks(self, Rotate_M, points):
@@ -187,45 +188,136 @@ class AlignDlib:
         #return list(map(lambda p: (p.x, p.y), points.parts()))
         return [(p.x, p.y) for p in points.parts()]
 
+    def rotate_img(self, img, center=None, angle=0, crop_size=None, scale=1.0):
+        width = img.shape[1]
+        height = img.shape[0]
+        if center is None:
+            center = (width / 2, height / 2)
+        # print center
+        rot_m = cv2.getRotationMatrix2D(center, angle, scale)
+        if crop_size is not None:
+            rot_m[0][2] += crop_size[0] / 2.0 - center[0]
+            rot_m[1][2] += crop_size[1] / 2.0 - center[1]
+        img = cv2.warpAffine(img, rot_m, crop_size)
+        return img
+
+    def rotate_points(self, points, center=None, angle=0, crop_size=None, scale=1.0):
+        if center is None:
+            center = (0, 0)
+
+        rot_m = cv2.getRotationMatrix2D(center, angle, scale)
+        if crop_size is not None:
+            rot_m[0][2] += crop_size[0] / 2.0 - center[0]
+            rot_m[1][2] += crop_size[1] / 2.0 - center[1]
+        points = self.modify_landmarks(rot_m, points)
+        # rotated_points = []
+        # for point in points:
+        #     rotated_points.append([point[0], point[1]])
+        return points
+
+    def caculate_vertical_angle(self, point_left_eye, point_right_eye, point_bottom_lip):
+        x0 = point_left_eye[0]
+        y0 = point_left_eye[1]
+        x1 = point_right_eye[0]
+        y1 = point_right_eye[1]
+        a = y1 - y0
+        b = x0 - x1
+        c = x1 * y0 - x0 * y1
+        m = point_bottom_lip[0]
+        n = point_bottom_lip[1]
+        point_vv = ((b*b*m-a*b*n-a*c)/(a*a+b*b),(a*a*n-a*b*m-b*c)/(a*a+b*b))
+        x_dis = point_vv[0] - point_bottom_lip[0]
+        y_dis = abs(point_vv[1] - point_bottom_lip[1])
+
+        angle = math.atan(float(x_dis) / y_dis) / 3.1415926 * 180
+        return angle
+
+    def align_stable(self, rgbImg, min_value=1.2, max_value=5, bb=None,
+              landmarks=None, 
+              skipMulti=False, scale=0.5):
+        if rgbImg is None:
+            return 401, None, None, None
+        if len(rgbImg.shape) < 3:
+            return 404, None, None, None
+        if rgbImg.shape[2] == 4:
+            rgbImg=cv2.cvtColor(rgbImg,cv2.COLOR_BGRA2BGR) 
+        rgbImg_height = rgbImg.shape[0]
+        rgbImg_width = rgbImg.shape[1]
+        if rgbImg_width < config.min_size[0] or rgbImg_height < config.min_size[1]:
+            return 402, None, None, None
+        rate = float(rgbImg_height) / rgbImg_width
+        if rate > 2.5 or rate < 0.4:
+            return 403, None, None, None
+
+        new_rgbImg_width = 0
+        new_rgbImg_height = 0
+
+        if rgbImg_width > rgbImg_height:
+            new_rgbImg_height = config.detect_size[1]
+            new_rgbImg_width = int((float(new_rgbImg_height) / rgbImg_height) * rgbImg_width)
+        else:
+            new_rgbImg_width = config.detect_size[0]
+            new_rgbImg_height = int((float(new_rgbImg_width) / rgbImg_width) * rgbImg_height)
+        rgbImg = cv2.resize(rgbImg, (new_rgbImg_width, new_rgbImg_height))
+
+        if bb is None:
+            bb = self.getLargestFaceBoundingBox(rgbImg, skipMulti)
+            if bb is None:
+                print 'no face detect'
+                return 405, None, None, None
+
+        face_width =  bb.right() - bb.left()
+        face_height = bb.bottom() - bb.top()
+        
+        scale_m = config.crop_size[0] * scale / face_width
+
+        if face_width * min_value > rgbImg.shape[1] or face_width * max_value < rgbImg.shape[1]:
+            print 'face is too small or big'
+            return 406, None, None, None
+        if landmarks is None:
+            landmarks = self.findLandmarks(rgbImg, bb)
+
+        point_left_eye = landmarks[39]
+        point_right_eye = landmarks[42]
+        point_bottom_lip = landmarks[57]
+        point_nose = landmarks[30]
+        angle = self.caculate_vertical_angle(point_left_eye, point_right_eye, point_bottom_lip)
+        # print angle
+        img_aligned = self.rotate_img(rgbImg, center=point_nose, angle= angle, crop_size=config.crop_size, scale=scale_m)
+        landmarks_aligned = self.rotate_points(landmarks, center=point_nose, angle= angle, crop_size=config.crop_size, scale=scale_m)
+        
+        face_distance = self.computer_diatance(landmarks_aligned)
+        if face_distance > config.max_noseEye_distance:
+            print ('face angle=%d > %d. is too big' %(face_distance , config.max_noseEye_distance))
+            return 407, None, None, None
+
+        face_width_aligned_half = face_width * scale_m / 2
+        face_height_aligned_half = face_height * scale_m / 2
+        face_left = int(config.crop_size[0] / 2 - face_width_aligned_half)
+        face_right = int(config.crop_size[0] / 2 + face_width_aligned_half)
+        face_top = int(config.crop_size[1] / 2 - face_height_aligned_half)
+        face_bottom = int(config.crop_size[1] / 2 + face_height_aligned_half)
+
+        face_img_aligned = img_aligned[face_top:face_bottom, face_left:face_right]
+
+        return 201, img_aligned, face_img_aligned, landmarks_aligned
+
+
     #pylint: disable=dangerous-default-value
     def align(self, rgbImg, min_value=1.2, max_value=5, bb=None,
               landmarks=None, landmarkIndices=INNER_EYES_AND_BOTTOM_LIP,
               skipMulti=False, scale=0.3):
-        r"""align(imgDim, rgbImg, bb=None, landmarks=None, landmarkIndices=INNER_EYES_AND_BOTTOM_LIP)
-
-        Transform and align a face in an image.
-
-        :param imgDim: The edge length in pixels of the square the image is resized to.
-        :type imgDim: int
-        :param rgbImg: RGB image to process. Shape: (height, width, 3)
-        :type rgbImg: numpy.ndarray
-        :param bb: Bounding box around the face to align. \
-                   Defaults to the largest face.
-        :type bb: dlib.rectangle
-        :param landmarks: Detected landmark locations. \
-                          Landmarks found on `bb` if not provided.
-        :type landmarks: list of (x,y) tuples
-        :param landmarkIndices: The indices to transform to.
-        :type landmarkIndices: list of ints
-        :param skipMulti: Skip image if more than one face detected.
-        :type skipMulti: bool
-        :param scale: Scale image before cropping to the size given by imgDim.
-        :type scale: float
-        :return: The aligned RGB image. Shape: (imgDim, imgDim, 3)
-        :rtype: numpy.ndarray
-        """
+        
         img_dim = 800
         if rgbImg is None:
             return 401, None, None, None
         if len(rgbImg.shape) < 3:
             return 404, None, None, None
         if rgbImg.shape[2] == 4:
-            rgbImg=cv2.cvtColor(rgbImg,cv2.COLOR_BGRA2BGR)
-        # rgbImg = cv2.cvtColor(rgbImg,cv2.COLOR_RGB2BGR)
-        # cv2.imwrite('1.jpg',rgbImg) 
+            rgbImg=cv2.cvtColor(rgbImg,cv2.COLOR_BGRA2BGR) 
         rgbImg_height = rgbImg.shape[0]
         rgbImg_width = rgbImg.shape[1]
-        if rgbImg_width < 560  or rgbImg_height < 720:
+        if rgbImg_width < 300 or rgbImg_height < 300:
             return 402, None, None, None
         rate = float(rgbImg_height) / rgbImg_width
         if rate > 2.5 or rate < 0.4:
@@ -248,6 +340,7 @@ class AlignDlib:
                 return 405, None, None, None
 
         face_width =  bb.right() - bb.left()
+
         if face_width * min_value > rgbImg.shape[1] or face_width * max_value < rgbImg.shape[1]:
             print 'face is too small or big'
             return 406, None, None, None
@@ -257,7 +350,6 @@ class AlignDlib:
         npLandmarks = np.float32(landmarks)
         npLandmarkIndices = np.array(landmarkIndices)
 
-        #pylint: disable=maybe-no-member
         H = cv2.getAffineTransform(npLandmarks[npLandmarkIndices],
                                    img_dim * MINMAX_TEMPLATE[npLandmarkIndices] * scale + img_dim * (1 - scale) / 2)
 
@@ -283,16 +375,103 @@ class AlignDlib:
         
         return 201, img_aligned, face_img_aligned, face_landmarks_aligned
 
+def crop_dataset(img_dir, output_dir, scale = 1):
+    import os
+    face_align = AlignDlib('face_util/shape_predictor_68_face_landmarks.dat')
+    img_names = os.listdir(img_dir)
+    for img_name in img_names:
+        img_path = os.path.join(img_dir, img_name)
+        output_img_path = os.path.join(output_dir, img_name)
+        img = cv2.imread(img_path)
+        rect = face_align.getLargestFaceBoundingBox(img)
+        if rect is None:
+            continue
+        width = rect.right() - rect.left()
+        height = rect.bottom() - rect.top() 
+
+
+        new_left = rect.left() - int(width * scale)
+        if new_left < 0:
+            new_left = 0
+        new_top = rect.top() - int(height * scale)
+        if new_top < 0:
+            new_top = 0
+        new_right = rect.right() + int(width * scale)
+        if new_right > img.shape[1]:
+            new_right = img.shape[1]
+        new_bottom = rect.bottom() + int(height * scale)
+        if new_bottom > img.shape[0]:
+            new_bottom >= img.shape[0]
+        crop_img = img[new_top:new_bottom, new_left:new_right]
+        print img_name
+        cv2.imwrite(output_img_path, crop_img)
+
+def show_dataset(img_dir):
+    import os
+    face_align = AlignDlib('face_util/shape_predictor_68_face_landmarks.dat')
+    img_names = os.listdir(img_dir)
+    for img_name in img_names:
+        img_path = os.path.join(img_dir, img_name)
+        img = cv2.imread(img_path)
+        code, img, img_face, face_landmarks_aligned = face_align.align(rgbImg=img,min_value=1.2, max_value=15)
+        if face_landmarks_aligned is None:
+            print img_name + 'is none'
+            continue
+        for i in range(0, len(face_landmarks_aligned)):
+            cv2.circle(img, face_landmarks_aligned[i], 7, (0, 255, 0))
+        print img_name
+        cv2.imshow('show', img)
+        cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+
+
 if __name__ == '__main__':
-    img = cv2.imread('face_util/test/8.jpg', cv2.IMREAD_COLOR)
 
     face_align = AlignDlib('face_util/shape_predictor_68_face_landmarks.dat')
     
-    code, img, img_face, face_landmarks_aligned1 = face_align.align(rgbImg=img,min_value=2, max_value=5)
-    print face_landmarks_aligned1
-    for i in range(0, len(face_landmarks_aligned1)):
-        cv2.circle(img, face_landmarks_aligned1[i], 7, (0, 255, 0))
-    #cv2.rectangle(img,(rectangle_rect[0],rectangle_rect[1]),(rectangle_rect[3],rectangle_rect[2]), (255,0,0))
-    cv2.imshow('show', img)
-    cv2.waitKey(0)
+    img = cv2.imread('./data/3131860710_SXXL.jpg')
+    code, img_aligned, face_img_aligned, landmarks_aligned= face_align.align_stable(img)
+    print code
+    if code == 201:
+        for i in range(0, len(landmarks_aligned)):
+            cv2.circle(img_aligned, landmarks_aligned[i], 7, (0, 255, 0))   
+
+        cv2.imshow('show', img_aligned)
+        cv2.imshow('show1', face_img_aligned)
+        cv2.waitKey(0)
+
+    # face_align = AlignDlib('face_util/shape_predictor_68_face_landmarks.dat')
+    # img = cv2.imread('./face_util/test.jpg')
+    # points = [(200, 200), (600, 100), (400, 400)]
+    # center = (400, 400)
+    
+    # angle = face_align.caculate_vertical_angle(points[0], points[1], points[2])
+    # img = face_align.rotate_img(img, center=center, angle= -angle)
+    
+    # print angle
+
+    # points = face_align.rotate_points(points, center=center, angle= -angle)
+    # print points
+    # for i in range(0, len(points)):
+    #     cv2.circle(img, points[i], 7, (0, 255, 0))
+    # cv2.imshow('show', img)
+    # cv2.waitKey(0)
+
+
+
+
+    # crop_dataset('/home/bbt/male_0523', '/home/bbt/male_0523')
+    # show_dataset('/home/bbt/work/face_morph_master/data/template_img_crop_big/male')
+    # img = cv2.imread('data/template_img/female/VCG21gic5474042.jpg', cv2.IMREAD_COLOR)
+
+    # face_align = AlignDlib('face_util/shape_predictor_68_face_landmarks.dat')
+    
+    # code, img, img_face, face_landmarks_aligned1 = face_align.align(rgbImg=img,min_value=1.2, max_value=8)
+    # print face_landmarks_aligned1
+    # for i in range(0, len(face_landmarks_aligned1)):
+    #     cv2.circle(img, face_landmarks_aligned1[i], 7, (0, 255, 0))
+    # #cv2.rectangle(img,(rectangle_rect[0],rectangle_rect[1]),(rectangle_rect[3],rectangle_rect[2]), (255,0,0))
+    # cv2.imshow('show', img)
+    # cv2.waitKey(0)
 

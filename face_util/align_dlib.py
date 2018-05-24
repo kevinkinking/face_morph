@@ -233,8 +233,7 @@ class AlignDlib:
         return angle
 
     def align_stable(self, rgbImg, min_value=1.2, max_value=5, bb=None,
-              landmarks=None, 
-              skipMulti=False, scale=0.5):
+              landmarks=None, skipMulti=False, scale=0.5):
         if rgbImg is None:
             return 401, None, None, None
         if len(rgbImg.shape) < 3:
@@ -299,7 +298,7 @@ class AlignDlib:
         face_bottom = int(config.crop_size[1] / 2 + face_height_aligned_half)
 
         face_img_aligned = img_aligned[face_top:face_bottom, face_left:face_right]
-
+        face_img_aligned = cv2.resize(face_img_aligned, (128, 128))
         return 201, img_aligned, face_img_aligned, landmarks_aligned
 
 
@@ -307,7 +306,7 @@ class AlignDlib:
     def align(self, rgbImg, min_value=1.2, max_value=5, bb=None,
               landmarks=None, landmarkIndices=INNER_EYES_AND_BOTTOM_LIP,
               skipMulti=False, scale=0.3):
-        
+        print '----------------'
         img_dim = 800
         if rgbImg is None:
             return 401, None, None, None

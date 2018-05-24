@@ -138,12 +138,11 @@ def show_align_points(img, min_value=1, max_value=5):
     cv2.waitKey(-1)
 
 def crop_faces_dir(img_dir,faces_crop_dir, min_value=1, max_value=5):
-
     for img_name in os.listdir(img_dir):
         img_path = os.path.join(img_dir,img_name)
         print img_path
         img = cv2.imread(img_path)
-        _, _, face_img_aligned, _ = face_detector.align(rgbImg = img, min_value=min_value, max_value=max_value)
+        _, _, face_img_aligned, _ = face_detector.align_stable(rgbImg=img, min_value=min_value, max_value=max_value)
         if face_img_aligned is not None:
             face_img_path = os.path.join(faces_crop_dir,img_name)
             cv2.imwrite(face_img_path, face_img_aligned)

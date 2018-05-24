@@ -54,7 +54,7 @@ def generate_AlignImg_data(imput_TemplateImg_dir, save_AlignImg_dir, save_KeyPoi
         img_path = imput_TemplateImg_dir + img_name
         print ('process: %s' %img_path)
         img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-        _, templet_img_align , _ , points = face_detector.align(img, min_value, max_value)
+        _, templet_img_align , _ , points = face_detector.align_stable(img, min_value, max_value)
 
         if points is None:
             continue
@@ -117,20 +117,32 @@ def get_AliImg_data(align_img_dir, align_txt_dir):
 if __name__ == '__main__':
     
     face_detector = face_process.init_detector()
-    #1
-    template_ManImg_path = config.template_ManImg_path
-    save_ManImg_path = config.save_ManImg_path
-    crop_template_face(template_ManImg_path, save_ManImg_path)
+    # #1
+    # template_ManImg_path = config.template_ManImg_path
+    # save_ManImg_path = config.save_ManImg_path
+    # if not os.path.exists(save_ManImg_path):
+    #     os.makedirs(save_ManImg_path)
+    # crop_template_face(template_ManImg_path, save_ManImg_path)
 
-    template_feManImg_path = config.template_feManImg_path
-    save_feManImg_path = config.save_feManImg_path
-    crop_template_face(template_feManImg_path, save_feManImg_path)
+    # template_feManImg_path = config.template_feManImg_path
+    # save_feManImg_path = config.save_feManImg_path
+    # if not os.path.exists(save_feManImg_path):
+    #     os.makedirs(save_feManImg_path)
+    # crop_template_face(template_feManImg_path, save_feManImg_path)
     
-    #2
-    generate_feature(config.prototxt, config.caffemodel, config.save_ManImg_path, config.save_male_txt, config.save_male_feature)
-    generate_feature(config.prototxt, config.caffemodel, config.save_feManImg_path, config.save_female_txt, config.save_female_feature)
+    # #2
+    # generate_feature(config.prototxt, config.caffemodel, config.save_ManImg_path, config.save_male_txt, config.save_male_feature)
+    # generate_feature(config.prototxt, config.caffemodel, config.save_feManImg_path, config.save_female_txt, config.save_female_feature)
     
     #3
+    if not os.path.exists(config.save_AlignFemalePoint_dir):
+        os.makedirs(config.save_AlignFemalePoint_dir)
+    if not os.path.exists(config.save_AlignMaleImg_dir):
+        os.makedirs(config.save_AlignMaleImg_dir)
+    if not os.path.exists(config.save_AlignFemalePoint_dir):
+        os.makedirs(config.save_AlignFemalePoint_dir)
+    if not os.path.exists(config.save_AlignMalePoint_dir):
+        os.makedirs(config.save_AlignMalePoint_dir)
     generate_AlignImg_data(config.template_feManImg_path, config.save_AlignFemaleImg_dir, config.save_AlignFemalePoint_dir,min_value=1, max_value=50)
     generate_AlignImg_data(config.template_ManImg_path, config.save_AlignMaleImg_dir, config.save_AlignMalePoint_dir,min_value=1, max_value=50)
     

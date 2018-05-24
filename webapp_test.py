@@ -6,9 +6,9 @@ import timer
 
 #47.95.145.80
 #172.16.36.221
-#10.1.5.163    asdas
+#10.1.5.163
 def face_aging_web(img_url):
-    url = 'http://172.16.36.221:8081/face_morph/face_aging_web'
+    url = 'http://10.1.5.163:8081/face_morph/face_aging_web'
     params = {
         'img_url': img_url,
         'sex_flag': 'male'

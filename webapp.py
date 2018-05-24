@@ -4,7 +4,7 @@ import json
 import interface
 import config
 
-app = Flask(__name__)
+app = Flask(__name__) #aaaaa
 
 @app.route("/face_morph/face_aging_web",methods=["POST"])
 def face_aging_web():

@@ -16,7 +16,7 @@ def face_aging_web(img_url):
     return requests.post(url, params=params)
 
 if __name__ == "__main__":
-    for i in range(1):
+    for i in range(100):
         ti = timer.Timer()
         ti.tic()
         img_url = 'http://p8ypfsng5.bkt.clouddn.com/74e6c512-5b41-11e8-b352-4cedfb68088f.jpg'

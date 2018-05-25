@@ -8,3 +8,5 @@
 .gitignore
 nohup.out
 *.log
+*.pyc
+*.qiniu_pythonsdk_hostscache.json

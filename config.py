@@ -11,10 +11,10 @@ face_area=[140, 50, 330, 550]
 
 k_size = (1, 1)
 
-min_size = (300, 300)
+min_size = (100, 100)
 detect_size = (800, 1000)
 crop_size = (600, 800) #must < detect_size
-mat_multiple = 0.90
+mat_multiple = 0.93
 # alphas = [0.80, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50, 0.45, 0.40, 0.35, 0.30]
 alphas = [0.90, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30,0.20]
 # alphas = [0.80, 0.6, 0.4, 0.3]
@@ -23,12 +23,12 @@ gif_indexs = [0, 2, 5, 7]
 append_points = [(0,650), (599,650), (0,0), (0,400),(0,799), (300,799), (599,799), (599,400),(599,0), (300,0)]
 
 #
-shape_predictor_68 = 'face_util/shape_predictor_68_face_landmarks.dat'
+shape_predictor_68 = r'face_util/shape_predictor_68_face_landmarks.dat'
 
 #
-triangle_82 = 'face_morph/tri_82.txt'
-triangle_68 = 'face_morph/tri_64.txt'
-triangle_old_78 = 'face_morph/tri_old.txt'
+triangle_82 = r'face_morph/tri_82.txt'
+triangle_68 = r'face_morph/tri_64.txt'
+triangle_old_78 = r'face_morph/tri_old.txt'
 
 #crop face
 template_ManImg_path = r'data/template_img/male/'
@@ -56,3 +56,12 @@ img_format_values = ['.jpg', '.png']
 gif_speed = 0.2
 
 algo_timeout = 5
+
+#from old to youth
+save_AlignBabyImg_dir = r'data/template_baby_align/images/'
+save_AlignBabyPoint_dir = r'data/template_baby_align/keypoints/'
+template_BabyImg_path = r'data/template_baby_img/'
+face_shape_alpha = 0.3
+face_color_alpha = 0.7
+FaceSwitch_ker_size = (1, 1)
+FaceSwitch_mat_multiple = 0.93

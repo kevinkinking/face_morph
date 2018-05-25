@@ -32,6 +32,10 @@ def init_template_data():
     female_img_dic, female_points_dic = init_data.get_AliImg_data(config.save_AlignFemaleImg_dir, config.save_AlignFemalePoint_dir)
     male_img_dic, male_points_dic = init_data.get_AliImg_data(config.save_AlignMaleImg_dir, config.save_AlignMalePoint_dir)
 
+def init_FaceSwitch_data():
+    global baby_img_dic, baby_points_dic
+    baby_img_dic, baby_points_dic = init_data.get_AliImg_data(config.save_AlignBabyImg_dir, config.save_AlignBabyPoint_dir)
+
 def get_feature(img):
     if img.shape[-1] == 3:
         input = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -98,6 +102,12 @@ def get_most_similar_templet(face_img, sex_flag = 'male'):
         templet_img_align = female_img_dic[female_face_name]
     
     return templet_img_align, templet_img_align_points
+
+def get_change_baby(baby_name):
+    baby_align_img = baby_img_dic[baby_name]
+    baby_face_points = baby_points_dic[baby_name]
+
+    return baby_align_img, baby_face_points
 
 if __name__ == '__main__':
     features_female_template, features_female_ids = read_features('lcnn_face/features/face_features_female.txt', 'lcnn_face/features/face_features_female.bin')

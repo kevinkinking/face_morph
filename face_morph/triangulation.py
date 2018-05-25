@@ -17,10 +17,16 @@ JAW_END = 17
 FACE_START = 0
 FACE_END = 68
 
+JAW_POINTS_EXPEND = list(range(0, 27))
+
 OVERLAY_POINTS = [
     LEFT_FACE,
     RIGHT_FACE,
     JAW_POINTS,
+]
+
+OVERLAY_POINTS_EXPEND = [
+    JAW_POINTS_EXPEND,
 ]
 
 def draw_point(img, p, color):

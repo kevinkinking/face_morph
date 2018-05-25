@@ -135,16 +135,16 @@ if __name__ == '__main__':
     # generate_feature(config.prototxt, config.caffemodel, config.save_feManImg_path, config.save_female_txt, config.save_female_feature)
     
     #3
-    if not os.path.exists(config.save_AlignFemaleImg_dir):
-        os.makedirs(config.save_AlignFemaleImg_dir)
-    if not os.path.exists(config.save_AlignMaleImg_dir):
-        os.makedirs(config.save_AlignMaleImg_dir)
-    if not os.path.exists(config.save_AlignFemalePoint_dir):
-        os.makedirs(config.save_AlignFemalePoint_dir)
-    if not os.path.exists(config.save_AlignMalePoint_dir):
-        os.makedirs(config.save_AlignMalePoint_dir)
-    generate_AlignImg_data(config.template_feManImg_path, config.save_AlignFemaleImg_dir, config.save_AlignFemalePoint_dir,min_value=1, max_value=50)
-    generate_AlignImg_data(config.template_ManImg_path, config.save_AlignMaleImg_dir, config.save_AlignMalePoint_dir,min_value=1, max_value=50)
+    # if not os.path.exists(config.save_AlignFemaleImg_dir):
+    #     os.makedirs(config.save_AlignFemaleImg_dir)
+    # if not os.path.exists(config.save_AlignMaleImg_dir):
+    #     os.makedirs(config.save_AlignMaleImg_dir)
+    # if not os.path.exists(config.save_AlignFemalePoint_dir):
+    #     os.makedirs(config.save_AlignFemalePoint_dir)
+    # if not os.path.exists(config.save_AlignMalePoint_dir):
+    #     os.makedirs(config.save_AlignMalePoint_dir)
+    # generate_AlignImg_data(config.template_feManImg_path, config.save_AlignFemaleImg_dir, config.save_AlignFemalePoint_dir,min_value=1, max_value=50)
+    # generate_AlignImg_data(config.template_ManImg_path, config.save_AlignMaleImg_dir, config.save_AlignMalePoint_dir,min_value=1, max_value=50)
     
     #
     # img_dic, point_dic = get_AliImg_data(config.save_AlignFemaleImg_dir, config.save_AlignFemalePoint_dir)
@@ -152,3 +152,10 @@ if __name__ == '__main__':
     # for key in img_dic.keys():
     #     face_process.show_landmarks(img_dic[key], point_dic[key])
     
+
+    ##---------------------------------------------------
+    generate_AlignImg_data(config.template_BabyImg_path, config.save_AlignBabyImg_dir, config.save_AlignBabyPoint_dir,min_value=1, max_value=50)
+    img_dic, point_dic = get_AliImg_data(config.save_AlignBabyImg_dir, config.save_AlignBabyPoint_dir)
+
+    for key in img_dic.keys():
+        face_process.show_landmarks(img_dic[key], point_dic[key])
